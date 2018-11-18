@@ -12,15 +12,21 @@ from nltk.stem.porter import PorterStemmer
 import json
 import collections
 import itertools
+import math
 #nltk.download('punkt')
 #nltk.download('stopwords')
 import library #library of functions
+
+# To reaload library import
+from importlib import reload
+reload(library)
 
 # To print results
 BOLD = '\033[1m'
 END = '\033[0m'
 
 #========================== Step 3: Search Engine ==========================
+#------- 3.1 Conjunctive Query -------
 
 def cleanString(data):
     """
@@ -73,7 +79,7 @@ def invertedIndexAdd(inverted_index, doc_id, doc, index_column):
     - Input: doc_id --> (string) Name of the doc
     - Input: doc --> (pandas.df) Document to explore
     - Input: index_column --> (string) Column to explore
-    - Description: This function takes all documents and removes punctuation, stop words and do stemming
+    - Description: This function makes an inverted index
     """
     entry = doc.iloc[0][index_column]
     if type(entry) is str: #the data must be a string
@@ -104,3 +110,41 @@ def searchQueryConjunctive(inverted_index, query):
     docAppearances = [set(inverted_index[word]) for word in words]
     # Count the number of appearances of words of each doc
     return dict(collections.Counter(itertools.chain.from_iterable(docAppearances)))
+
+#------- 3.2 Conjunctive Query and Ranking Score-------
+#------- 3.2.1 Inverted index -------
+
+def invertedIndexScoredAdd(inverted_index_scored, doc_id, doc, inverted_index, n_total_docs):
+    """
+    Function: invertedIndexScoredAdd(inverted_index_scored, doc_id, doc, inverted_index)
+    - Input: inverted_index_scored --> (dic) Dictionary to save results
+    - Input: doc_id --> (string) Name of the doc
+    - Input: doc --> (pandas.df) Document to explore
+    - Input: inverted_index --> (dic) Dictionary of the normal inverted index
+    - Input: n_total_docs --> (int) number of docs
+    - Description: This function makes an inverted index with tf-idf score
+    """
+    entry1 = doc.iloc[0]['description']
+    entry2 = doc.iloc[0]['title']
+
+    if type(entry1) is str and type(entry2) is str: #the data must be string
+        textDoc = entry1 + " " + entry2
+        nTextWords = len(textDoc)
+        setTextDoc = set(textDoc.split()) # In order to not repeat documents.
+        for word in setTextDoc:
+            # Compute TF
+            wordOccur = textDoc.split().count(word) # Number of appearances in the text
+            tf = wordOccur/nTextWords # Term frequency
+            # Compute IDF
+            idf = math.log( n_total_docs / len(inverted_index[word]) ) # Inverse document frequency
+            # Compute TF-IDF
+            tfIdf = tf*idf
+            # Add values to the dictionary
+            if word not in inverted_index_scored:
+                inverted_index_scored.setdefault(word, [(doc_id, tfIdf)])
+            else:
+                inverted_index_scored[word].append((doc_id, tfIdf))
+                
+    return inverted_index_scored
+
+#------- 3.2.2 Execute the query -------
