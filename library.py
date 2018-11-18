@@ -32,7 +32,8 @@ def cleanString(data):
     """
     Function: cleanString(data)
     - Input: data --> (string)
-    - Description: This function takes all documents and removes punctuation, stop words and do stemming
+    Description: This function takes all documents and removes punctuation, stop words and do stemming
+    - Return: result (string) cleaned string of data
     """
     if type(data) is str: # If the data is type str do this
         # Removes punctuation
@@ -57,7 +58,7 @@ def modifyDocs(n):
     """
     Function: modifyDocs()
     - Input: n --> (int) number of files to clean
-    - Description: This function modifies all documents using cleanString to clean "description" and "title"
+    Description: This function modifies all documents using cleanString to clean "description" and "title"
     """
     # Read documents to clean "description" and "title" data
     for i in range(0, n):
@@ -79,7 +80,8 @@ def invertedIndexAdd(inverted_index, doc_id, doc, index_column):
     - Input: doc_id --> (string) Name of the doc
     - Input: doc --> (pandas.df) Document to explore
     - Input: index_column --> (string) Column to explore
-    - Description: This function makes an inverted index
+    Description: This function makes an inverted index
+    - Return: inverted_index (dictionary)
     """
     entry = doc.iloc[0][index_column]
     if type(entry) is str: #the data must be a string
@@ -98,7 +100,8 @@ def searchQueryConjunctive(inverted_index, query):
     Function: searchQueryConjunctive(inverted_index, query)
     - Input: inverted_index --> (collection) Collection with the inverted index
     - Input: query --> (string) Query to search
-    - Description: This function search all documents where have matches with the querys
+    Description: This function search all documents where have matches with the querys
+    - Return: Dictionary of documents and each number of coincidences with the query (dictionary)
     """
     print(BOLD + "Query intruduced: " + END + query)
     # Clean query
@@ -114,7 +117,23 @@ def searchQueryConjunctive(inverted_index, query):
 #------- 3.2 Conjunctive Query and Ranking Score-------
 #------- 3.2.1 Inverted index -------
 
-def invertedIndexScoredAdd(inverted_index_scored, doc_id, doc, inverted_index, n_total_docs):
+def readTitleAndDesc(doc_id):
+    """
+    Function: readTitleAndDesc(doc_id)
+    - Input: doc_id --> (string) Name of the doc_id
+    Description: This function read the doc_id selected and return title and description
+    - Return: textDoc (string)
+    """
+    doc = pd.read_csv('documentsCleaned/'+doc_id+'.tsv', sep='\t', encoding='utf-8')
+    entry1 = doc.iloc[0]['description']
+    entry2 = doc.iloc[0]['title']
+    if type(entry1) is str and type(entry2) is str:
+        textDoc = entry1 + " " + entry2
+    else:
+        textDoc = ""
+    return textDoc
+
+def invertedIndexScoredAdd(inverted_index_scored, doc_id, inverted_index, n_total_docs):
     """
     Function: invertedIndexScoredAdd(inverted_index_scored, doc_id, doc, inverted_index)
     - Input: inverted_index_scored --> (dic) Dictionary to save results
@@ -122,29 +141,66 @@ def invertedIndexScoredAdd(inverted_index_scored, doc_id, doc, inverted_index, n
     - Input: doc --> (pandas.df) Document to explore
     - Input: inverted_index --> (dic) Dictionary of the normal inverted index
     - Input: n_total_docs --> (int) number of docs
-    - Description: This function makes an inverted index with tf-idf score
+    Description: This function makes an inverted index with tf-idf score
+    - Return: inverted_index_scored (dictionary)
     """
-    entry1 = doc.iloc[0]['description']
-    entry2 = doc.iloc[0]['title']
 
-    if type(entry1) is str and type(entry2) is str: #the data must be string
-        textDoc = entry1 + " " + entry2
-        nTextWords = len(textDoc)
-        setTextDoc = set(textDoc.split()) # In order to not repeat documents.
-        for word in setTextDoc:
-            # Compute TF
-            wordOccur = textDoc.split().count(word) # Number of appearances in the text
-            tf = wordOccur/nTextWords # Term frequency
-            # Compute IDF
-            idf = math.log( n_total_docs / len(inverted_index[word]) ) # Inverse document frequency
-            # Compute TF-IDF
-            tfIdf = tf*idf
-            # Add values to the dictionary
-            if word not in inverted_index_scored:
-                inverted_index_scored.setdefault(word, [(doc_id, tfIdf)])
-            else:
-                inverted_index_scored[word].append((doc_id, tfIdf))
+    textDoc = readTitleAndDesc(doc_id).split()
+    nTextWords = len(textDoc) # Number of words in the doc
+    setTextDoc = set(textDoc) # In order to not repeat documents.
+    for word in setTextDoc:
+        # Compute TF
+        wordOccur = textDoc.count(word) # Number of appearances in the text
+        tf = wordOccur #/nTextWords # Term frequency #?????????????????????????????????????????????????
+        # Compute IDF
+        idf = math.log( n_total_docs / len(inverted_index[word]) ) # Inverse document frequency
+        # Compute TF-IDF
+        tfIdf = tf*idf
+        # Add values to the dictionary
+        if word not in inverted_index_scored:
+            inverted_index_scored.setdefault(word, [(doc_id, tfIdf)])
+        else:
+            inverted_index_scored[word].append((doc_id, tfIdf))
                 
     return inverted_index_scored
 
 #------- 3.2.2 Execute the query -------
+
+def cosineSimilarity(query, doc_id, inverted_index_scored): 
+    """
+    Function: cosineSimilarity(query, doc_id)
+    - Input: query --> (string) Query
+    - Input: doc_id --> (string) Name of the doc_id
+    Description: Compute summatory(TFIDF) / (|q| * |d|)
+    - Return: cosSim (float)
+    """
+    
+    cosSim = 0 # Cosine similarity result
+    
+    ## Computing |d|
+    d_ = 0 # Variable |d|
+    textDoc = readTitleAndDesc(doc_id).split() # String of words that contains the document
+    setTextDoc = set(textDoc) # In order to not repeat documents.
+    for word in setTextDoc:
+        nWordTimesInDoc = textDoc.count(word) #Number of times that appears the word in the doc
+        d_ += nWordTimesInDoc**2
+    d_ = d_**(1/2)
+    
+    ## Computing |q|
+    query = library.cleanString(query).split() # String query cleaned
+    q_ = len(query)**(1/2) # Square root of query length
+    
+    ## Computing summatory(tfidf)
+    sum_tfidf = float(0) # Variable to store the sum of the tfidf scores
+    for word in query:
+        if word in inverted_index_scored:
+            for item in inverted_index_scored[word]:
+                if doc_id in item:
+                    #print(item)
+                    sum_tfidf += item[1]
+                    
+    ## Computing cos similarity
+    if q_ != 0 and  d_ != 0:
+        cosSim = sum_tfidf / ( (q_) * (d_) )
+        
+    return cosSim
