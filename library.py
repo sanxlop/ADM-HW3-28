@@ -28,18 +28,22 @@ def cleanString(data):
     - Input: data --> (string)
     - Description: This function takes all documents and removes punctuation, stop words and do stemming
     """
-    # Removes punctuation
-    tokenizer = RegexpTokenizer(r'\w+')
-    words = tokenizer.tokenize(data)
-    # Removes stopwords
-    stopWords = set(stopwords.words('english'))
-    wordsFiltered = []
-    for w in words:
-        if w not in stopWords:
-            wordsFiltered.append(w)
-    # Stemming of words
-    porter = PorterStemmer()
-    result = [porter.stem(word) for word in wordsFiltered]
+    if type(data) is str: # If the data is type str do this
+        # Removes punctuation
+        tokenizer = RegexpTokenizer(r'\w+')
+        words = tokenizer.tokenize(data)
+        # Removes stopwords
+        stopWords = set(stopwords.words('english'))
+        wordsFiltered = []
+        for w in words:
+            if w not in stopWords:
+                wordsFiltered.append(w)
+        # Stemming of words
+        porter = PorterStemmer()
+        listOfWords = [porter.stem(word) for word in wordsFiltered]
+        result = ' '.join(listOfWords)
+    else:
+        result = np.nan #if the data introduced is not str return nan
     # Return cleaned string
     return result
 
@@ -54,28 +58,30 @@ def modifyDocs(n):
         # Read data frame of the document i
         doc = pd.read_csv('documents/doc_'+str(i)+'.tsv', sep='\t', encoding='utf-8')
         # Edit data frame with cleaned values
-        doc.at[0, 'title']  = ' '.join(cleanString(doc.iloc[0]["title"]))
-        doc.at[0, 'description']= ' '.join(cleanString(doc.iloc[0]["description"]))
+        doc.at[0, 'title']  = cleanString(doc.iloc[0]["title"])
+        doc.at[0, 'description'] = cleanString(doc.iloc[0]["description"])
         # Re-write results in the same document
         doc.to_csv('documentsCleaned/doc_'+str(i)+'.tsv', sep='\t', encoding='utf-8', index = False)
 
 
 #------- 3.1.1 Create your Index -------
 
-def inverted_index_add(inverted_index, doc_id, doc, index_column):
+def invertedIndexAdd(inverted_index, doc_id, doc, index_column):
     """
-    Function: inverted_index_add(inverted_index, doc_id, doc, index_column)
+    Function: invertedIndexAdd(inverted_index, doc_id, doc, index_column)
     - Input: inverted_index --> (dic) Dictionary to save results
     - Input: doc_id --> (string) Name of the doc
     - Input: doc --> (pandas.df) Document to explore
     - Input: index_column --> (string) Column to explore
     - Description: This function takes all documents and removes punctuation, stop words and do stemming
     """
-    for word in doc.iloc[0][index_column].split():
-        if word not in inverted_index:
-            inverted_index.setdefault(word, [doc_id])
-        else:
-            inverted_index[word].append(doc_id)
+    entry = doc.iloc[0][index_column]
+    if type(entry) is str: #the data must be a string
+        for word in entry.split():
+            if word not in inverted_index:
+                inverted_index.setdefault(word, [doc_id])
+            else:
+                inverted_index[word].append(doc_id)
     return inverted_index
 
 
@@ -90,7 +96,7 @@ def searchQueryConjunctive(inverted_index, query):
     """
     print(BOLD + "Query intruduced: " + END + query)
     # Clean query
-    query = library.cleanString(query)
+    query = library.cleanString(query).split()
     # Look for the words that are in the inverted index
     words = [word for word in query if word in inverted_index]
     print(BOLD + "Cleaned query: " + END + " ".join(words))
