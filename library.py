@@ -115,7 +115,7 @@ def searchQueryConjunctive(inverted_index, query):
     return dict(collections.Counter(itertools.chain.from_iterable(docAppearances)))
 
 #------- 3.2 Conjunctive Query and Ranking Score-------
-#------- 3.2.1 Inverted index -------
+#------- 3.2.1 Inverted index scored -------
 
 def readTitleAndDesc(doc_id):
     """
@@ -149,12 +149,14 @@ def invertedIndexScoredAdd(inverted_index_scored, doc_id, inverted_index, n_tota
     nTextWords = len(textDoc) # Number of words in the doc
     setTextDoc = set(textDoc) # In order to not repeat documents.
     for word in setTextDoc:
-        # Compute TF
-        wordOccur = textDoc.count(word) # Number of appearances in the text
-        tf = wordOccur #/nTextWords # Term frequency #?????????????????????????????????????????????????
-        # Compute IDF
-        idf = math.log( n_total_docs / len(inverted_index[word]) ) # Inverse document frequency
-        # Compute TF-IDF
+        ## Compute TF
+        wordOccurInDoc = textDoc.count(word) # Number of appearances in the text
+        tf = wordOccurInDoc #/ nTextWords # Term frequency #?????????????????????????????????????????????????
+        ## Compute IDF
+        N = n_total_docs #total number of documents in the corpus
+        nDocsInTerm = len(inverted_index[word]) # Number of documents where the term "word" appears
+        idf = math.log( N / nDocsInTerm ) # Inverse document frequency
+        ## Compute TF-IDF
         tfIdf = tf*idf
         # Add values to the dictionary
         if word not in inverted_index_scored:
@@ -175,7 +177,7 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
     - Return: cosSim (float)
     """
     
-    cosSim = 0 # Cosine similarity result
+    cosSim = (doc_id, 0) # Cosine similarity result
     
     ## Computing |d|
     d_ = 0 # Variable |d|
@@ -201,6 +203,6 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
                     
     ## Computing cos similarity
     if q_ != 0 and  d_ != 0:
-        cosSim = sum_tfidf / ( (q_) * (d_) )
+        cosSim = (doc_id, sum_tfidf / ( (q_) * (d_) ))
         
     return cosSim
