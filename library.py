@@ -114,6 +114,19 @@ def searchQueryConjunctive(inverted_index, query):
     # Count the number of appearances of words of each doc
     return dict(collections.Counter(itertools.chain.from_iterable(docAppearances)))
 
+def listOfConjunctiveMatches(searched_results, number_query_words):
+    """
+    Function: listOfConjunctiveMatches(searched_results)
+    - Input: searched_results --> (collection) Collection with matches of the query with each doc
+    Description:Loop through all the serached_results and see if the number of coincidences is equal to the number of words of the query
+    - Return: (list) List of matches tsv files string
+    """
+    list_matches = []
+    for result in searched_results.items():
+        if result[1] == number_query_words:
+            list_matches.append(pd.read_csv('documents/'+result[0]+'.tsv', sep='\t', encoding='utf-8', usecols=['title', 'description', 'city', 'url']))
+    return list_matches
+
 #------- 3.2 Conjunctive Query and Ranking Score-------
 #------- 3.2.1 Inverted index scored -------
 
@@ -206,3 +219,32 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
         cosSim = (doc_id, sum_tfidf / ( (q_) * (d_) ))
         
     return cosSim
+
+
+def getListOfConjunctiveDocIds(inverted_index, query):
+    """
+    Function: getListOfConjunctiveDocIds(inverted_index, query)
+    - Input: inverted_index --> (dic) Dictionary with the inverted index
+    - Input: query --> (string) Query
+    Description: Compute the string doc_id of the conjunctive matches
+    - Return: conjunctiveDocId (list) list of string of the doc_id
+    """
+    
+    # Compute the search with the query and obtain a dictionary with the number of matches
+    searchedResultsNMatches = searchQueryConjunctive(inverted_index, query)
+    numberOfQueryWords = len(cleanString(query).split())
+    print(BOLD + "Number of query words:" + END, numberOfQueryWords)
+
+    # Look for doc_id conjunctive match with the query
+    conjunctiveDocId = []
+    for resultNMatches in searchedResultsNMatches.items(): # sortedResults contains tuples doc_id and number of querymatches
+        if(resultNMatches[1] == numberOfQueryWords):
+            conjunctiveDocId.append(resultNMatches[0])
+
+    # Print the number of conjunctive matches
+    if(conjunctiveDocId == []):
+        print(BOLD + "No conjunctive matches" + END)
+    else:
+        print(BOLD + "Number of conjunctive matches:" + END,len(conjunctiveDocId))
+        
+    return conjunctiveDocId
