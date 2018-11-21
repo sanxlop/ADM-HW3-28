@@ -164,7 +164,7 @@ def invertedIndexScoredAdd(inverted_index_scored, doc_id, inverted_index, n_tota
     for word in setTextDoc:
         ## Compute TF
         wordOccurInDoc = textDoc.count(word) # Number of appearances in the text
-        tf = wordOccurInDoc #/ nTextWords # Term frequency #?????????????????????????????????????????????????
+        tf = wordOccurInDoc #/ nTextWords # Term frequency #
         ## Compute IDF
         N = n_total_docs #total number of documents in the corpus
         nDocsInTerm = len(inverted_index[word]) # Number of documents where the term "word" appears
@@ -190,7 +190,7 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
     - Return: cosSim (float)
     """
     
-    cosSim = (0, doc_id,) # Cosine similarity result
+    cosSim = (0, doc_id) # Cosine similarity result
     
     ## Computing |d|
     d_ = 0 # Variable |d|
@@ -212,7 +212,7 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
             for item in inverted_index_scored[word]:
                 if doc_id in item:
                     #print(item)
-                    sum_tfidf += item[1]
+                    sum_tfidf += item[1] # Take TFIDF value
                     
     ## Computing cos similarity
     if q_ != 0 and  d_ != 0:
