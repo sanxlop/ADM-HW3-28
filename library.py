@@ -190,7 +190,7 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
     - Return: cosSim (float)
     """
     
-    cosSim = (doc_id, 0) # Cosine similarity result
+    cosSim = (0, doc_id,) # Cosine similarity result
     
     ## Computing |d|
     d_ = 0 # Variable |d|
@@ -216,7 +216,7 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
                     
     ## Computing cos similarity
     if q_ != 0 and  d_ != 0:
-        cosSim = (doc_id, sum_tfidf / ( (q_) * (d_) ))
+        cosSim = (sum_tfidf / ( (q_) * (d_) ), doc_id)
         
     return cosSim
 
@@ -248,3 +248,62 @@ def getListOfConjunctiveDocIds(inverted_index, query):
         print(BOLD + "Number of conjunctive matches:" + END,len(conjunctiveDocId))
         
     return conjunctiveDocId
+
+def computeCosineSim(conjunctive_docid, n_data, query, inverted_index_scored):
+    """
+    Function: computeCosineSim(conjunctive_docid, n_data, query, inverted_index_scored)
+    - Input: conjunctive_docid --> (list) List with doc_id in the conjunctive search
+    - Input: n_data --> (int) Number of row data of files to compute
+    - Input: query --> (string) Query
+    - Input: inverted_index_scored --> (Dic) Dictionary with the tfidf score
+    Description: Compute cosineSimilarity for conjunctive results or all the rest
+    - Return: cos_sim_results (list) list of tuples cos_sim_result and doc_id
+    """
+    cos_sim_results = []
+    if(len(conjunctive_docid) != 0):
+        #CONJUNCTIVE SEARCH
+        for doc_id in conjunctive_docid:
+            cos_sim_results.append(cosineSimilarity(query, doc_id, inverted_index_scored))
+    else:
+        #NOT CONJUNCTIVE SEARCH (takes more time)
+        for i in range(0, n_data):
+            cos_sim_results.append(cosineSimilarity(query, "doc_"+str(i), inverted_index_scored))
+    return cos_sim_results
+
+def makeAndDisplayCosineSimilarityDataFrame(sorted_cos_sim, conjunctive_docid):
+    """
+    Function: computeAndDisplayCosineSimilarityDataFrame(sorted_cos_sim, conjunctive_docid)
+    - Input: conjunctive_docid --> (List) List with doc_id in the conjunctive search
+    - Input: sorted_cos_sim --> (List) List of tuples containing "doc_id" and "cos_sim"
+    Description: Compute dataframe with the data to visualize and display it
+    - Display: dataframe of resuts
+    """
+    # List of pandas df
+    dfs_cos = []
+    # Loop through all the sorted results and add similarity and conjunctive_match info to a df
+    for i in range(0, len(sorted_cos_sim)):
+        if sorted_cos_sim[i][0] > 0:
+            doc_test = pd.read_csv('documents/'+sorted_cos_sim[i][1]+'.tsv', sep='\t', encoding='utf-8', usecols=['title', 'description', 'city', 'url'])
+            doc_test["similarity"] = sorted_cos_sim[i][0]
+            dfs_cos.append(doc_test)
+
+    # Print if they are conjunctive results or not
+    if(len(conjunctive_docid) != 0):
+        print(BOLD + "CONJUNCTIVE RESULTS" + END)
+    elif(len(conjunctive_docid) != 0):
+        print(BOLD + "NOT CONJUNCTIVE RESULTS" + END)
+
+    # Concat all dataframes into one to show the results        
+    if(len(dfs_cos) != 0):
+        # Concatenate all data into one DataFrame
+        big_frame = pd.concat(dfs_cos, ignore_index=True)
+        # Reorder columns 
+        df = big_frame.loc[:, ['title', 'description', 'city', 'url', 'similarity']]
+        # Display dataframe result of the query
+        display(df)
+    else:
+        print("NO RESULTS")
+
+
+#========================== Step 4:  ==========================
+#------- 4.1  -------
