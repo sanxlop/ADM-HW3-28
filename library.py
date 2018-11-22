@@ -154,7 +154,7 @@ def invertedIndexScoredAdd(inverted_index_scored, doc_id, inverted_index, n_tota
     - Input: doc --> (pandas.df) Document to explore
     - Input: inverted_index --> (dic) Dictionary of the normal inverted index
     - Input: n_total_docs --> (int) number of docs
-    Description: This function makes an inverted index with tf-idf score
+    Description: This function makes an inverted index with tf-idf score (without taking into account the query)
     - Return: inverted_index_scored (dictionary)
     """
 
@@ -203,7 +203,13 @@ def cosineSimilarity(query, doc_id, inverted_index_scored):
     
     ## Computing |q|
     query = library.cleanString(query).split() # String query cleaned
-    q_ = len(query)**(1/2) # Square root of query length
+    q_ = 0 #Variable |q|
+    setQuery = set(query) # In order to not repeat documents.
+    for word in setQuery:
+        nWordTimesInQuery = query.count(word) #Number of times that appears the word in the doc
+        q_ += nWordTimesInQuery**2
+    q_ = q_**(1/2)
+    #q_ = len(query)**(1/2) # Square root of query length
     
     ## Computing summatory(tfidf)
     sum_tfidf = float(0) # Variable to store the sum of the tfidf scores
@@ -305,5 +311,122 @@ def makeAndDisplayCosineSimilarityDataFrame(sorted_cos_sim, conjunctive_docid):
         print("NO RESULTS")
 
 
-#========================== Step 4:  ==========================
+#========================== Step 4: Define a new score! ==========================
 #------- 4.1  -------
+
+def returnAndShowDatasetConjunctiveResults(conjunctive_doc_id):
+    """
+    Function: showDatasetConjunctiveResults(conjunctive_doc_id)
+    - Input: conjunctive_docid --> (List) List with doc_id in the conjunctive search
+    Description: Show the conjunctive results dataframe
+    - Display: dataframe of resuts
+    - Return: pandas dataframe with results
+    """
+    dfs_new = []
+    columns = ['average_rate_per_night', 'bedrooms_count', 'city', 'description', 'title', 'url']
+    # Loop through all the sorted results and add similarity and conjunctive_match info to a df
+    for doc_id in conjunctive_doc_id:
+        if len(conjunctive_doc_id) != 0:
+            doc_test = pd.read_csv('documents/'+doc_id+'.tsv', sep='\t', encoding='utf-8', usecols=columns)
+            doc_test["doc_id"] = doc_id
+            doc_test["average_rate_per_night"] = int(library.cleanString(doc_test.iloc[0]["average_rate_per_night"]))
+            if doc_test.iloc[0]["bedrooms_count"] == "Studio":
+                doc_test["bedrooms_count"] = 1
+            dfs_new.append(doc_test)
+
+    # Print if they are conjunctive results or not
+    if(len(conjunctive_doc_id) != 0):
+        print(BOLD + "CONJUNCTIVE RESULTS" + END)
+    elif(len(conjunctive_doc_id) != 0):
+        print(BOLD + "NOT CONJUNCTIVE RESULTS" + END)
+
+    # Concat all dataframes into one to show the results        
+    if(len(dfs_new) != 0):
+        # Concatenate all data into one DataFrame
+        df = pd.concat(dfs_new, ignore_index=True)
+        # Display dataframe result of the query
+        display(df)
+    else:
+        print("NO RESULTS")
+
+    return df
+
+def dicNormalized(conjunctive_docid, df, column_name):
+    """
+    Function: dicNormalized(conjunctive_docid, df, column_name)
+    - Input: conjunctive_docid --> (List) List of conjunctives docid
+    - Input: df --> (pandas DataFrame) Dataframe to compute
+    - Input: column_name --> (String) Name of the column to compute
+    Description: Compute list of ints normalized by the max value
+    - Return: normaliez (Dict) Dictionary of tuples with normalized values and docid
+    """
+    normalized = {}
+    for docid in conjunctive_docid:
+        value = list(df.loc[df["doc_id"]==docid, column_name])[0]
+        maxValue = df[column_name].max()
+        normalized.update({docid: -value/maxValue})
+    return normalized
+
+def dicMatchCityQuery(conjunctive_docid, query, df):
+    """
+    Function: dicMatchCityQuery(conjunctive_docid, query, df)
+    - Input: conjunctive_docid --> (List) List of conjunctives docid
+    - Input: df --> (pandas DataFrame) Dataframe to compute
+    - Input: query --> (String) Query string
+    Description: Compute list of ints normalized by the max value if the city appears in the query
+    - Return: normaliez (Dict) Dictionary of tuples with normalized values and docid
+    """
+    found_words = {}
+    query = library.cleanString(query).split()
+    for docid in conjunctive_docid:
+        coincidence = 0
+        city = library.cleanString(list(df.loc[df["doc_id"]==docid, "city"])[0]).split()
+        for string in city:
+            if string in query:
+                coincidence = 1
+        found_words.update({docid: coincidence})
+    return found_words
+
+def listOfComputeScores(conjunctive_docid, *args):
+    """
+    Function: listOfComputeScores(conjunctive_docid, *args)
+    - Input: conjunctive_docid --> (List) List of conjunctives docid
+    - Input: args --> (Lists) List of tuples with scores and docid
+    Description: Compute the summatory of all the scores in args
+    - Return: newScores (List) List of tuples with scores and docid
+    """
+    newScores = []
+    for docid in conjunctive_docid:
+        sumScore = 0
+        for arg in args:
+            sumScore += arg[docid]
+        newScores.append((sumScore, docid))
+    return newScores
+
+
+def returnAndShowDatasetResultsOwnScore(sorted_scored):
+    """
+    Function: returnAndShowDatasetResultsOwnScore(sorted_scored)
+    - Input: sorted_scored --> (List) List of tuples with the score and the doc_id
+    Description: Show the results ordered by our own score
+    - Display: dataframe of resuts
+    - Return: pandas dataframe with results
+    """
+    dfs_new = []
+    columns = ['title', 'description', 'city', 'url']
+    # Loop through all the sorted results and add similarity and conjunctive_match info to a df
+    for doc_id in sorted_scored:
+        doc_test = pd.read_csv('documents/'+doc_id[1]+'.tsv', sep='\t', encoding='utf-8', usecols=columns)
+        #doc_test["new_score"] = doc_id[0]
+        dfs_new.append(doc_test)
+
+    # Concat all dataframes into one to show the results        
+    if(len(dfs_new) != 0):
+        # Concatenate all data into one DataFrame
+        df = pd.concat(dfs_new, ignore_index=True)
+        # Display dataframe result of the query
+        display(df)
+    else:
+        print("NO RESULTS")
+        
+    return df
