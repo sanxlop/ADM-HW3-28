@@ -6,12 +6,13 @@ We used the data of (https://www.kaggle.com/PromptCloudHQ/airbnb-property-data-f
 We used also additional data provided in the [Homework 3 repository](https://github.com/CriMenghini/ADM-2018/tree/master/Homework_3).
 ## List of files
 1. `Homework_3.ipynb`
-⋅⋅⋅This ipython notebook contains the followed steps to analyze and make the searh engine.
+- This ipython notebook contains the followed steps to analyze and make the searh engine.
 2. `library.py` 
-⋅⋅⋅This python file contains all the libraries used to perform the search engine.
+- This python file contains all the libraries used to perform the search engine.
 ## Description of the project
 First of all, we have managed the data provided in a csv file to multiple tsv files. Secondly, we have cleaned the data in order to avoid special characters and repeated words.
 And finally, we have used inverted index, TF-IDF and cosine similarity to perform the different search engines provided. 
+____
 ## STEPS followed
 ### STEP 1. Download the data
 Just download the csv dataset.
