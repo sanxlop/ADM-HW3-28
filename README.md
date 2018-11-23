@@ -1,3 +1,4 @@
+[VISUALIZE JUPYTER NOTEBOOK IN NBVIEWER](https://nbviewer.jupyter.org/github/sanxlop/ADM-HW3-28/blob/master/Homework_3.ipynb)
 # Homework 3 - Find the perfect place to stay in Texas!
 In this assignment we perform an analysis of houses, rooms or apartments in Texas. Specifically, we start from a dataset with different information about rental housing
 ## Data to analyze
