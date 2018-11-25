@@ -10,11 +10,10 @@ We used also additional data provided in the [Homework 3 repository](https://git
 - This ipython notebook contains the followed steps to analyze and make the searh engine.
 2. `library.py` 
 - This python file contains all the libraries used to perform the search engine.
-In `/data`:
-  3. `inverted_index.txt` 
-  - This file contains the inverted index
-  4. `inverted_index_scored.txt` 
-  - This file contains the inverted index with the TF-IDF scores
+3. `inverted_index.txt` 
+- This file contains the inverted index
+4. `inverted_index_scored.txt` 
+- This file contains the inverted index with the TF-IDF scores
 ## Description of the project
 First of all, we have managed the data provided in a csv file to multiple tsv files. Secondly, we have cleaned the data in order to avoid special characters and repeated words.
 And finally, we have used inverted index, TF-IDF and cosine similarity to perform the different search engines provided. 
