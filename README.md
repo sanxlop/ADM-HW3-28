@@ -1,8 +1,8 @@
-[VISUALIZE JUPYTER NOTEBOOK IN NBVIEWER](https://nbviewer.jupyter.org/github/sanxlop/ADM-HW3-28/blob/master/Homework_3.ipynb)
+##[VISUALIZE JUPYTER NOTEBOOK IN NBVIEWER](https://nbviewer.jupyter.org/github/sanxlop/ADM-HW3-28/blob/master/Homework_3.ipynb)
 # Homework 3 - Find the perfect place to stay in Texas!
 In this assignment we perform an analysis of houses, rooms or apartments in Texas. Specifically, we start from a dataset with different information about rental housing
 ## Data to analyze
-We used the data of (https://www.kaggle.com/PromptCloudHQ/airbnb-property-data-from-texas)
+We have used the data of (https://www.kaggle.com/PromptCloudHQ/airbnb-property-data-from-texas)
 ## Additional data
 We used also additional data provided in the [Homework 3 repository](https://github.com/CriMenghini/ADM-2018/tree/master/Homework_3).
 ## List of files
@@ -28,3 +28,4 @@ Make and inverted index with the TF-IDF score and use it to find documents with 
 ### STEP 4. Define a new score!
 We have defined our new score normalizing values of average price, city and number of bedrooms in order to sort the previous results.
 ### BONUS STEP: Make a nice visualization
+In this section we are taking coordinates and a radio to show in the map the houses inside the area (map_folium)
