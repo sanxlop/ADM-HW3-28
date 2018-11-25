@@ -13,6 +13,9 @@ import json
 import collections
 import itertools
 import math
+import heapq
+import folium
+from geopy import distance
 #nltk.download('punkt')
 #nltk.download('stopwords')
 import library #library of functions
@@ -430,3 +433,42 @@ def returnAndShowDatasetResultsOwnScore(sorted_scored):
         print("NO RESULTS")
         
     return df
+
+
+#========================== Bonus Step: Show a map! ==========================
+
+def serchDocIdHousesInRadio(n_files, start_point, radius):
+    """
+    Function: serchDocIdHousesInRadio(n_files, start_point)
+    - Input: n_files --> (Int) Number of files in the data set
+    - Input: start_point --> (Float) Tuple of floats containing latitude and longitude
+    - Input: radius --> (Int) Number of meters of the circle radius
+    Description: Make a list with the doc_id that are inside the calculated distance
+    - Return: (List) List of strings with doc_id
+    """
+    # Search houses in radio
+    docid_houses_in_radio = []
+    for i in range(0,n_files):
+        # Read one tsv file
+        readFile = pd.read_csv('documents/doc_'+str(i)+'.tsv', sep='\t', encoding='utf-8') 
+        if(not np.isnan(readFile.latitude[0]) and not np.isnan(readFile.longitude[0])):
+            coordinates_house = (readFile.latitude[0], readFile.longitude[0]) # Take coordinates of the house
+            computed_distance = distance.distance(start_point, coordinates_house).km # Compute the distance from the start point
+            if (computed_distance < radius/1000): # If is in the radio save result
+                docid_houses_in_radio.append('doc_'+str(i))
+    return docid_houses_in_radio
+
+def addHouseToMap(doc_ids, map_folium):
+    """
+    Function: addHouseToMap(doc_ids, map_folium)
+    - Input: doc_ids --> (List) List of doc_id in the radio
+    - Input: map_folium --> (Folium object) Map folium
+    Description: Add houses in doc_ids to the map
+    """
+    #Adding houses
+    for docid in doc_ids:
+        # Read one tsv file
+        readFile = pd.read_csv('documents/'+docid+'.tsv', sep='\t', encoding='utf-8')
+        tooltip_val = '<b>'+str(readFile.title[0])+'</b>'
+        popup_val = '<b>Price per night: '+str(readFile.average_rate_per_night[0])+'</b>'
+        folium.Marker([readFile.latitude[0], readFile.longitude[0]], popup=popup_val, tooltip=tooltip_val, icon=folium.Icon(color='blue')).add_to(map_folium)
